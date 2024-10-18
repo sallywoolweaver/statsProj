@@ -36,15 +36,23 @@ def extract_missed_shots(pdf_path, players, column_coords):
 
             for player in players:
                 y_coord = player['y_coord']
-                x0, x1 = column_coords['missed_shots']['x0'], column_coords['missed_shots']['x1']
-                cropped_image = binary_image[int(y_coord - 5):int(y_coord + 15), x0:x1]
-                markings = pytesseract.image_to_string(cropped_image, config='--psm 10').strip()
-                print(f"Player: {player['name']}, Missed Shots: {markings}")
+                x0, x1, y0, y1 = column_coords['missed_shots']['x0'], column_coords['missed_shots']['x1'], column_coords['missed_shots']['y0'], column_coords['missed_shots']['y1']
+
+                # Check if player's y-coordinate falls within the missed shots column boundaries
+                if y0 <= y_coord <= y1:
+                    cropped_image = binary_image[int(y_coord - 10):int(y_coord + 25), x0:x1]
+
+                    # Debugging: Save cropped image for verification
+                    cv2.imwrite(f"cropped_{player['name'].replace(',', '_')}.png", cropped_image)
+
+                    # Perform OCR to extract the markings
+                    markings = pytesseract.image_to_string(cropped_image, config='--psm 10').strip()
+                    print(f"Player: {player['name']}, Missed Shots: {markings}")
 
 
 # Example usage
 players = extract_player_names_and_y_coordinates(pdf_file_path)
 column_coords = {
-    "missed_shots": {"x0": 507, "x1": 587}
+    "missed_shots": {"x0": 507, "x1": 587, "y0": 50, "y1": 800}  # Added y0 and y1 to specify the y-coordinate range for missed shots
 }
 extract_missed_shots(pdf_file_path, players, column_coords)
